@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MANN-E</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+  <div class="first_row">
+    <div class="sensor_box">Sensor feedback</div>
+    <div class="control_box">Automation</div>
+    <div class="control_box">Scan</div>
+  </div>
+
+  <div class="row">
+    <div class="video_box" width="40vw"><img src="/mjpeg"></div>
+    <div class="video_box">Video 2</div>
+  </div>
+
+  <div class="row">
+    <div class="camera_box">
+      <div>Camera arm servos control panel</div>
+      <div class="row">
+        <div class="servo_box">
+          MG90D <br>
+          <input id="angle" type="number">
+        </div>
+        <div class="servo_box">
+          MG90R <br>
+          <input id="lala" type="number">
+        </div>
+      </div>
+    </div>
+    <div class="camera_box">
+      <div>Secondary camera servos control panel</div>
+      <div class="servo_box">MG90R<br>angle</div>
+    </div>
+  </div>
+
+  <div class="fb_centering">
+    <div class="fb_box" data-command="forward">↓</div>
+    <div class="control_row">
+      <div class="control_box" data-command="left">←</div>
+      <div class="control_box" data-command="right">→</div>
+    </div>
+    <div class="fb_box" data-command="backward">↑</div>
+  </div>
+
+  <div class="speed_control_section">
+    <h2>Motor Speed Control (PWM)</h2>
+    <div class="speed_input_group">
+      <label for="pwmSpeedInput">Current Speed (%):</label>
+      <input type="number" id="pwmSpeedInput" value="0" min="0" max="255" step="5">
+      <button id="setSpeedButton">Set Speed</button>
+    </div>
+    <div class="speed_adjust_group">
+      <button id="speedUpButton">Speed Up (▲)</button>
+      <button id="speedDownButton">Speed Down (▼)</button>
+    </div>
+    <!-- <div class="fb_box" data-command="stop">STOP MOTORS</div>  -->
+
+  </div>
+  <script>
+    // --- Global variable for current speed ---
+    // This variable will hold the current PWM speed (0-100)
+    let currentPwmSpeed = 50; // Initialize with a default speed value
+
+    // --- Core Function: sendCommand ---
+    // This sends basic movement commands (forward, stop, etc.)
+    function sendCommand(command) {
+      fetch('/send_command', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ command: command })
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Command response:', data);
+          // You might want to update UI based on response
+        })
+        .catch(error => {
+          console.error('Error sending command:', error);
+        });
+    }
+
+    // --- Core Function: sendGlobalSpeed ---
+    // This sends *only* the speed value to a Flask endpoint
+    function sendGlobalSpeed(speed) {
+      fetch('/set_global_speed', { // This endpoint needs to be created in app.py
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ speed: speed })
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Global speed set response:', data);
+          if (data.status === 'error') {
+            alert('Failed to set speed: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error sending global speed:', error);
+        });
+    }
+
+    // --- Get DOM elements for Speed Control ---
+    const pwmSpeedInput = document.getElementById('pwmSpeedInput');
+    const setSpeedButton = document.getElementById('setSpeedButton');
+    const speedUpButton = document.getElementById('speedUpButton');
+    const speedDownButton = document.getElementById('speedDownButton');
+
+    // Initialize input value (ensures it matches JS variable on load)
+    if (pwmSpeedInput) {
+      pwmSpeedInput.value = currentPwmSpeed;
+    }
+
+    // --- Event Listeners for Speed Control ---
+
+    // Listener for the "Set Speed" button
+    if (setSpeedButton) {
+      setSpeedButton.addEventListener('click', () => {
+        const newSpeed = parseInt(pwmSpeedInput.value); // Get value from input field
+        if (!isNaN(newSpeed) && newSpeed >= 0 && newSpeed <= 100) {
+          currentPwmSpeed = newSpeed; // Update global speed variable
+          console.log("PWM Speed set to:", currentPwmSpeed);
+          sendGlobalSpeed(currentPwmSpeed); // Send to backend
+        } else {
+          alert('Please enter a speed between 0 and 100.');
+          pwmSpeedInput.value = currentPwmSpeed; // Reset input to last valid speed
+        }
+      });
+    }
+
+    // Listener for the "Speed Up" button
+    if (speedUpButton) {
+      speedUpButton.addEventListener('click', () => {
+        // Increase speed by 5, but not above 100
+        currentPwmSpeed = Math.min(100, currentPwmSpeed + 5);
+        if (pwmSpeedInput) {
+          pwmSpeedInput.value = currentPwmSpeed; // Update input field
+        }
+        console.log("PWM Speed increased to:", currentPwmSpeed);
+        sendGlobalSpeed(currentPwmSpeed); // Send to backend
+      });
+    }
+
+    // Listener for the "Speed Down" button
+    if (speedDownButton) {
+      speedDownButton.addEventListener('click', () => {
+        // Decrease speed by 5, but not below 0
+        currentPwmSpeed = Math.max(0, currentPwmSpeed - 5);
+        if (pwmSpeedInput) {
+          pwmSpeedInput.value = currentPwmSpeed; // Update input field
+        }
+        console.log("PWM Speed decreased to:", currentPwmSpeed);
+        sendGlobalSpeed(currentPwmSpeed); // Send to backend
+      });
+    }
+
+    // --- Event listener for Rover Movement Control Buttons ---
+    // This assumes your movement buttons have data-command attributes (e.g., data-command="forward")
+    document.querySelectorAll('.fb_box[data-command], .control_box[data-command]').forEach(button => {
+      button.addEventListener('click', () => {
+        const command = button.dataset.command;
+        // Movement commands (forward, backward, left, right, stop) just send the command.
+        // The speed is handled separately by sendGlobalSpeed.
+        sendCommand(command);
+      });
+    });
+
+
+  </script>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>

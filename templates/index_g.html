@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MANN-E</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    
+
+    <div class="row">
+        <div class="video_box" width="40vw"><img src="/mjpeg"></div>
+        <!-- <div class="video_box">Video 2</div> -->
+    </div>
+
+    <!-- <div class="row">
+        <div class="camera_box">
+            <div>Camera arm servos control panel</div>
+            <div class="row">
+                <div class="servo_box">
+                    MG90D <br>
+                    <input id="angle" type="number">
+                </div>
+                <div class="servo_box">
+                    MG90R <br>
+                    <input id="lala" type="number">
+                </div>
+            </div>
+        </div>
+        <div class="camera_box">
+            <div>Secondary camera servos control panel</div>
+            <div>MG90R<br>angle</div>
+        </div>
+    </div> -->
+<div class="body_contents">
+
+
+    <div class="fb_centering">
+        <div class="fb_box" data-command="forward">↑</div>
+        <div class="control_row">
+            <div class="control_box" data-command="left">←</div>
+            <div class="control_box" data-command="right">→</div>
+        </div>
+        <div class="fb_box" data-command="backward">↓</div>
+    </div>
+    <div class="first_row">
+        <div class="sensor_box">
+            <h2>Sensor Feedback</h2>
+            <p>ENC1: RPM: <span id="rpm1">0.00</span> | Speed: <span id="speed1">0.00</span> cm/s</p>
+            <p>ENC2: RPM: <span id="rpm2">0.00</span> | Speed: <span id="speed2">0.00</span> cm/s</p>
+        </div>
+        <!-- <div class="control_box">Automation</div>
+        <div class="control_box">Scan</div> -->
+    </div>
+
+    <div class="speed_control_section">
+        <h2>Motor Speed Control (PWM)</h2>
+        <div class="speed_input_group">
+            <label for="pwmSpeedInput">Current Speed (%):</label>
+            <input type="number" id="pwmSpeedInput" value="50" min="0" max="100" step="5">
+            <button id="setSpeedButton">Set Speed</button>
+        </div>
+        <div class="speed_adjust_group">
+            <button id="speedUpButton">Speed Up (▲)</button>
+            <button id="speedDownButton">Speed Down (▼)</button>
+        </div>
+        <div class="fb_box" data-command="stop">STOP MOTORS</div>
+    </div>
+</div>
+    <script src="{{ url_for('static', filename='script_g.js') }}"></script>
+</body>
+
+</html>

@@ -1,0 +1,156 @@
+body {
+  margin: 3vh;
+  gap: 1vh;
+  display: flex;
+  flex-direction: column;
+  /* background-image: url("photo_2025-06-12_19-22-38.jpg"); */
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: top;
+  background-color: #2d2d2d;
+  color: snow;
+  
+}
+.body_contents{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  gap: 4vw;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.first_row {
+  display: flex;
+  
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sensor_box {
+  /* border: 0.3vh solid white; */
+  color: white;
+  padding: 10px;
+  /* width: 30vw;
+  height: 4vh; */
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  flex-direction: column;
+}
+
+.servo_box input {
+  /* width: 6vw; */
+  padding: 10px;
+  /* border-radius: 0.5vh; */
+  border: none;
+  /* font-size: 1.8vh; */
+  text-align: center;
+}
+
+.video_box {
+  border: 0.3vh solid white;
+  color: white;
+  padding: 2vh;
+  width: 40vw;
+  height: 40vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.camera_box {
+  border: 0.3vh solid white;
+  color: white;
+  padding: 2vh;
+  width: 40vw;
+  height: 15vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+}
+
+.servo_box {
+  border: 0.3vh solid white;
+  color: white;
+  padding: 1vh;
+  margin: 2vh 2vw;
+  width: 10vw;
+  height: 7vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.fb_centering {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2vh;
+}
+
+.control_row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3vw;
+}
+
+.fb_box {
+  border:  solid white;
+  padding: 10px;
+  /* width: 3vh;
+  height: 3vh; */
+  /* font-size: 2vh; */
+  /* display: flex; */
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.fb_box:hover {
+  background-color: rgb(255, 57, 3);
+  font-weight: 900;
+}
+
+.control_box {
+  border: 0.3vh solid white;
+  color: white;
+  padding: 1vh;
+  height: 3vh;
+  min-width: 3vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2vh;
+  cursor: pointer;
+  user-select: none;
+}
+.control_box:hover {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.control_box.active,
+.fb_box.active {
+    background-color: rgba(255, 255, 255, 0.5);
+    color: white;
+}
+.speed_control_section{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+}

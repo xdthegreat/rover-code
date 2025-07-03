@@ -1,0 +1,23 @@
+# Python virtual environment
+venv/
+.venv/
+env/
+.env/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# IDE specific files (VS Code)
+.vscode/
+
+# Other common large/ignored files
+*.log
+*.bin
+*.swp
