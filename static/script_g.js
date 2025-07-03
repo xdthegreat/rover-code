@@ -164,7 +164,7 @@ document.querySelectorAll('.fb_box[data-command], .control_box[data-command]').f
             sendCommand(command); 
         }
     });
-
+// hhh
     const stopHandler = () => {
         button.classList.remove('active');
         sendCommand('stop'); 
