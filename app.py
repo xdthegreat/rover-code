@@ -4,13 +4,17 @@ import time
 
 import threading
 import json
+import math
 
 from hardware import forward, backward, turn_left, turn_right, stop #comment and uncomment while running 
 from qr import *
 import serial # <--- REQUIRED: For serial communication used by ArduinoSerialComm
 from serial_comm import ArduinoSerialComm 
 import logging
-
+import board
+import busio
+from servo_cam import CameraServoController
+from kinematics import SkidSteerOdometry, track_width_m
 
 app = Flask(__name__)
 
@@ -34,9 +38,13 @@ arduino_comm = ArduinoSerialComm(SERIAL_PORT_MEGA, BAUD_RATE_MEGA)
 # --- REQUIRED: Global variables for encoder data and thread safety ---
 latest_encoder_data = {
     'rpm1': 0.0, 'speed1': 0.0,
-    'rpm2': 0.0, 'speed2': 0.0
+    'rpm2': 0.0, 'speed2': 0.0,
+    'yaw': 0.0 # Assuming yaw is also part of the encoder data
+    
 }
 encoder_data_lock = threading.Lock() # Protects access to latest_encoder_data
+
+odometry = SkidSteerOdometry(track_width_m) # Uses track_width_m
 
 # --- REQUIRED: Thread function to continuously read encoder data from Arduino ---
 def read_encoder_data_thread(ser_comm_obj):
@@ -47,20 +55,29 @@ def read_encoder_data_thread(ser_comm_obj):
             line = ser_comm_obj.read_data() # Use the read_data method from ArduinoSerialComm
             if line:
                 parts = line.split(",")
-                if len(parts) == 4:
+                if len(parts) == 7:
                     try:
                         # Parse float values
-                        rpm1 = float(parts[0])
-                        speed1 = float(parts[1])
-                        rpm2 = float(parts[2])
-                        speed2 = float(parts[3])
+                        imu_yaw_deg  = float(parts[0]) 
+                        rpm1 = float(parts[3])
+                        speed1 = float(parts[4])
+                        rpm2 = float(parts[5])
+                        speed2 = float(parts[6])
+                        
                         
                         with encoder_data_lock: # Acquire lock before modifying shared data
                             latest_encoder_data = {
                                 'rpm1': rpm1, 'speed1': speed1,
                                 'rpm2': rpm2, 'speed2': speed2
+                                
                             }
-                        # print(f"[Encoder Thread] Received: RPM1:{rpm1:.2f}, SPD1:{speed1:.2f} | RPM2:{rpm2:.2f}, SPD2:{speed2:.2f}") # For debugging thread
+                        # print(f"[Encoder Thread] Updated Data: {latest_encoder_data}") 
+
+                        # --- NEW: Update Odometry ---
+                        # Assuming rpm1 is left wheel RPM, rpm2 is right wheel RPM
+                        odometry.update(rpm1, rpm2, imu_yaw_deg )
+                        x, y, theta_deg = odometry.get_pose()
+                        # print(f"[Odometry] X: {x:.3f} m, Y: {y:.3f} m, Theta: {theta_deg:.1f}°") # Debug print for odometry
                     except ValueError:
                         print(f"[Encoder Thread] Parse error for encoder data: {line}")
                 else:
@@ -122,26 +139,14 @@ def get_encoder_data():
         data = latest_encoder_data
     # print(f"[Flask API] Sending Encoder Data: {data}") # Uncomment for API response debugging
     return jsonify(data)   
+
+# --- to get Odometry Pose ---
+@app.route('/get_pose')
+def get_pose():
+    with encoder_data_lock: # Use the same lock as encoder data for consistency
+        x, y, theta_deg = odometry.get_pose()
+    return jsonify({'x': x, 'y': y, 'theta': theta_deg})
     
-# GST_PIPELINE = (
-#     # "libcamerasrc ! "
-#     # "videoconvert ! "
-#     # "appsink drop=true max-buffers=1"
-    
-#     # "v4l2src device=/dev/video0 ! "  # Use v4l2src and specify the device path
-#     # "videoconvert ! "
-#     # "video/x-raw,format=BGR,width=320,height=240,framerate=30/1 ! " # Specify desired format/resolution
-#     # "appsink drop=true max-buffers=1"
-    
-#     #for the new web cam
-#     "v4l2src device=/dev/video0 ! "
-#     "image/jpeg,width=640,height=480,framerate=30/1 ! " # Request native MJPG 640x480@30fps
-#     "jpegdec ! "       # Decode MJPG to raw video (requires gstreamer1.0-plugins-good)
-#     "videoconvert ! "  # Convert raw video (e.g., YUYV from jpegdec) to BGR for OpenCV
-#     "video/x-raw,format=BGR,width=320,height=240 ! " # Scale down to 320x240 and ensure BGR for appsink
-#     "appsink drop=true max-buffers=1"
-#     # "v4l2src ! appsink"
-# )
 
 # ---  DELAY FOR CAMERA ---
 print("Delaying for camera warm-up...")
@@ -175,6 +180,8 @@ def send_angle():
     angle = data.get('angle')
     print(f"Received angle: {angle}", flush=True)
     # change_angle()
+    # --- NEW: Call set_camera_tilt_angle from CameraServoController object ---
+    camera_servo_controller.set_angle(angle) 
     return jsonify({'status': 'success', 'angle': angle})
 
 if __name__ == '__main__':
@@ -191,6 +198,20 @@ if __name__ == '__main__':
 
     # --- REQUIRED: RPi.GPIO init and Encoder Thread Start (moved before app.run) ---
     print("RPi.GPIO motor control ready via hardware.py.")
+    
+    # NEW: Initialize I2C bus here for all PCA9685 communication
+    i2c_bus = busio.I2C(board.SCL, board.SDA) 
+    SERVO_CAM_PCA_ADDRESS = 0x40 # Example: Address for the PCA9685 controlling the camera servo
+    CAMERA_TILT_SERVO_CHANNEL = 3 
+    # Initialize the Camera Servo Controller pca_address, servo_channel
+    camera_servo_controller = CameraServoController(i2c_bus, SERVO_CAM_PCA_ADDRESS, CAMERA_TILT_SERVO_CHANNEL)
+    if camera_servo_controller.pca is None:
+        print("CRITICAL ERROR: Camera Servo PCA9685 not initialized. Camera tilt control unavailable.")
+    else:
+        print("Camera Servo PCA9685 initialized.")
+
+
+    print("PCA9685 motor control ready via hardware.py.") 
     
     if arduino_comm.ser is None: # Check if serial connection failed at startup
         print("CRITICAL ERROR: Arduino serial communication not established for encoder data.")

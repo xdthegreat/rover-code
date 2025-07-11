@@ -47,13 +47,22 @@
         <div class="fb_box" data-command="backward">↓</div>
     </div>
     <div class="first_row">
-        <div class="sensor_box">
-            <h2>Sensor Feedback</h2>
-            <p>ENC1: RPM: <span id="rpm1">0.00</span> | Speed: <span id="speed1">0.00</span> cm/s</p>
-            <p>ENC2: RPM: <span id="rpm2">0.00</span> | Speed: <span id="speed2">0.00</span> cm/s</p>
+        <div class="sensor_feedback">
+            <div class="label">Sensor Feedback</div>
+            <div class="text">ENC1: RPM: <span id="rpm1">0.00</span> | Speed: <span id="speed1">0.00</span> cm/s</div>
+            <div class="text">ENC2: RPM: <span id="rpm2">0.00</span> | Speed: <span id="speed2">0.00</span> cm/s</div>
+            <div class="text">Pose: X: <span id="poseX">0.000</span> m, Y: <span id="poseY">0.000</span> m, &theta;: <span id="poseTheta">0.0</span>°</div>
         </div>
         <!-- <div class="control_box">Automation</div>
         <div class="control_box">Scan</div> -->
+         <div class="tilt_controls" style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button id="tiltUpButton" class="arrow_button">▲</button>
+                        <span style="font-size: 1.5em; font-weight: bold;">Angle: <span id="tiltAngleDisplay">90</span>°</span>
+                        <button id="tiltDownButton" class="arrow_button">▼</button>
+                    </div>
+                    <button id="tiltCenterButton">Center (90°)</button>
+        </div>
     </div>
 
     <div class="speed_control_section">
@@ -68,6 +77,7 @@
             <button id="speedDownButton">Speed Down (▼)</button>
         </div>
         <div class="fb_box" data-command="stop">STOP MOTORS</div>
+        <button class="pic" onclick="takePhoto()" id="takePhotoButton" style="font-size: 3vh;">Pose for a pic!</button>
     </div>
 </div>
     <script src="{{ url_for('static', filename='script_g.js') }}"></script>

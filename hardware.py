@@ -3,10 +3,15 @@
 import RPi.GPIO as GPIO
 import time
 
+
+
 PWM1 = 17 #white
 DIR1 = 18 #black (Left Motor)
 PWM2 = 22 #purple
 DIR2 = 23 #gray (Right Motor)
+
+
+
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False) 
@@ -50,8 +55,8 @@ def turn_left(speed):
     """
     print(f"[Hardware] Turning left at {speed}% speed")
     # Left motor backward (now needs LOW for DIR1)
-    GPIO.output(DIR1, GPIO.LOW)  # <--- CHANGED: Inverted DIR1 from HIGH to LOW
-    GPIO.output(DIR2, GPIO.LOW)  # Right motor forward (remains LOW)
+    GPIO.output(DIR1, GPIO.HIGH)  # <--- CHANGED: Inverted DIR1 from HIGH to LOW
+    GPIO.output(DIR2, GPIO.HIGH)  # Right motor forward (remains LOW)
     pwm1.ChangeDutyCycle(speed)
     pwm2.ChangeDutyCycle(speed)
 
@@ -62,8 +67,8 @@ def turn_right(speed):
     """
     print(f"[Hardware] Turning right at {speed}% speed")
     # Left motor forward (now needs HIGH for DIR1)
-    GPIO.output(DIR1, GPIO.HIGH) # <--- CHANGED: Inverted DIR1 from LOW to HIGH
-    GPIO.output(DIR2, GPIO.HIGH) # Right motor backward (remains HIGH)
+    GPIO.output(DIR1, GPIO.LOW) # <--- CHANGED: Inverted DIR1 from LOW to HIGH
+    GPIO.output(DIR2, GPIO.LOW) # Right motor backward (remains HIGH)
     pwm1.ChangeDutyCycle(speed)
     pwm2.ChangeDutyCycle(speed)
 

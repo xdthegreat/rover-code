@@ -24,15 +24,15 @@ def main():
                 continue  # Skip empty lines
 
             parts = line.split(",")
-            if len(parts) != 4:
+            if len(parts) != 7:
                 print(f"Invalid line: {line}")
                 continue
 
             try:
-                rpm1 = float(parts[0])
-                speed1 = float(parts[1])
-                rpm2 = float(parts[2])
-                speed2 = float(parts[3])
+                rpm1 = float(parts[3])
+                speed1 = float(parts[4])
+                rpm2 = float(parts[5])
+                speed2 = float(parts[6])
             except ValueError:
                 print(f"Parse error: {line}")
                 continue
