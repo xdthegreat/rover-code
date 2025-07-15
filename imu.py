@@ -1,30 +1,5 @@
-# import board        # From adafruit-blinka
-# import busio        # From adafruit-blinka (for I2C, not directly used here but common)
-# import RPi.GPIO as GPIO
-
-# import adafruit_bno08x
-# from adafruit_bno08x.uart import BNO08X_UART
-
-# import serial
-# uart = serial.Serial("/dev/serial0", 115200)
-
-# bno = BNO08X_UART(uart)
-
-# import time
-
-# while True:
-#     if bno.data_ready:
-#         event = bno.read()
-#         if event and event.orientation:
-#             print("Yaw: {:.2f}, Pitch: {:.2f}, Roll: {:.2f}".format(
-#                 event.orientation.yaw,
-#                 event.orientation.pitch,
-#                 event.orientation.roll
-#             ))
-#     time.sleep(0.01)
-    
-    
-# bno08x_test.py
+# imu.py - Raspberry Pi IMU Sensor Script
+# This script initializes and reads data from the BNO08x IMU sensor over UART.
 
 import board        # From adafruit-blinka
 import busio        # From adafruit-blinka (for I2C, not directly used here but common)

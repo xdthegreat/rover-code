@@ -143,6 +143,10 @@ function fetchEncoderData() {
             document.getElementById('rpm2').textContent = data.rpm2.toFixed(2);
             document.getElementById('speed2').textContent = data.speed2.toFixed(2);
             // console.log('Encoder data received:', data); // Uncomment for debugging
+            // Update IMU data
+
+            document.getElementById('imuPitch').textContent = data.pitch.toFixed(2);
+            document.getElementById('imuRoll').textContent = data.roll.toFixed(2);
         })
         .catch(error => {
             console.error('Error fetching encoder data:', error);
@@ -151,8 +155,11 @@ function fetchEncoderData() {
             document.getElementById('speed1').textContent = 'N/A';
             document.getElementById('rpm2').textContent = 'N/A';
             document.getElementById('speed2').textContent = 'N/A';
+            
+            document.getElementById('imuPitch').textContent = 'N/A';
+            document.getElementById('imuRoll').textContent = 'N/A';
         });
-}
+} 
 
 // --- NEW: Function to fetch and display odometry pose data ---
 function fetchPoseData() {
@@ -162,6 +169,7 @@ function fetchPoseData() {
             document.getElementById('poseX').textContent = data.x.toFixed(3);
             document.getElementById('poseY').textContent = data.y.toFixed(3);
             document.getElementById('poseTheta').textContent = data.theta.toFixed(1);
+            document.getElementById('absDistance').textContent = data.distance.toFixed(3);
             // console.log('Pose data received:', data); // Uncomment for debugging
         })
         .catch(error => {
@@ -169,6 +177,7 @@ function fetchPoseData() {
             document.getElementById('poseX').textContent = 'N/A';
             document.getElementById('poseY').textContent = 'N/A';
             document.getElementById('poseTheta').textContent = 'N/A';
+            
         });
 }
 

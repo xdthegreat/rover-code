@@ -1,4 +1,9 @@
-from flask import Flask, request, jsonify, render_template, Response
+# app.py - Flask Web Application for Rover Control
+# This application provides a web interface to control a rover using motors and an IMU sensor.  
+# It includes features for motor control, camera streaming, and QR code detection.
+
+
+from flask import Flask, request, jsonify, render_template, Response 
 import cv2
 import time
 
@@ -6,22 +11,23 @@ import threading
 import json
 import math
 
-from hardware import forward, backward, turn_left, turn_right, stop #comment and uncomment while running 
-from qr import *
+from hardware import forward, backward, turn_left, turn_right, stop
+from qr import * # <--- REQUIRED: For QR code detection and camera streaming
 import serial # <--- REQUIRED: For serial communication used by ArduinoSerialComm
-from serial_comm import ArduinoSerialComm 
-import logging
-import board
-import busio
-from servo_cam import CameraServoController
-from kinematics import SkidSteerOdometry, track_width_m
+from serial_comm import ArduinoSerialComm   # <--- REQUIRED: For Arduino serial communication
+import logging # <--- REQUIRED: For logging configuration
+import board # <--- REQUIRED: For board pin definitions
+import adafruit_pca9685 # <--- REQUIRED: For PCA9685 servo control
+import busio # <--- REQUIRED: For I2C communication used by PCA9685
+from servo_cam import CameraServoController # <--- REQUIRED: For camera servo control
+from kinematics import SkidSteerOdometry, track_width_m # <--- REQUIRED: For odometry calculations
 
-app = Flask(__name__)
+app = Flask(__name__)   
 
 # --- NEW: Code to suppress specific log messages ---
 log = logging.getLogger('werkzeug') # Get the werkzeug logger (used by Flask's dev server)
-
-class NoEncoderGetFilter(logging.Filter):
+ 
+class NoEncoderGetFilter(logging.Filter): 
     def filter(self, record):
         # Only log requests that are NOT for /get_encoder_data
         return not ("/get_encoder_data" in record.getMessage() and "GET" in record.getMessage())
@@ -37,9 +43,9 @@ arduino_comm = ArduinoSerialComm(SERIAL_PORT_MEGA, BAUD_RATE_MEGA)
 
 # --- REQUIRED: Global variables for encoder data and thread safety ---
 latest_encoder_data = {
-    'rpm1': 0.0, 'speed1': 0.0,
-    'rpm2': 0.0, 'speed2': 0.0,
-    'yaw': 0.0 # Assuming yaw is also part of the encoder data
+    'rpm1': 0.0, 'speed1': 0.0, 
+    'rpm2': 0.0, 'speed2': 0.0, 
+    'yaw': 0.0 # Added yaw for odometry calculations
     
 }
 encoder_data_lock = threading.Lock() # Protects access to latest_encoder_data
@@ -50,50 +56,67 @@ odometry = SkidSteerOdometry(track_width_m) # Uses track_width_m
 def read_encoder_data_thread(ser_comm_obj):
     global latest_encoder_data # Declare intent to modify global variable
     print("[Encoder Thread] Starting to read encoder data...")
+
+    from __main__ import app # Import 'app' from the global scope of app.py
+
     while True:
-        try:
-            line = ser_comm_obj.read_data() # Use the read_data method from ArduinoSerialComm
-            if line:
-                parts = line.split(",")
-                if len(parts) == 7:
-                    try:
-                        # Parse float values
-                        imu_yaw_deg  = float(parts[0]) 
-                        rpm1 = float(parts[3])
-                        speed1 = float(parts[4])
-                        rpm2 = float(parts[5])
-                        speed2 = float(parts[6])
-                        
-                        
-                        with encoder_data_lock: # Acquire lock before modifying shared data
-                            latest_encoder_data = {
-                                'rpm1': rpm1, 'speed1': speed1,
-                                'rpm2': rpm2, 'speed2': speed2
-                                
-                            }
-                        # print(f"[Encoder Thread] Updated Data: {latest_encoder_data}") 
+        with app.app_context():
+            try:
+                line = ser_comm_obj.read_data() # Use the read_data method from ArduinoSerialComm
+                if line:
+                    parts = line.split(",")
+                    if len(parts) == 7:
+                        try:
+                            # Parse float values 
+                            # Assuming the format is: "imu_yaw_deg,rpm1,speed1,rpm2,speed2"
+                            # Example: "45.0,100,50,120,60"
+                            imu_yaw_deg  = float(parts[0]) 
+                            imu_pitch_deg = float(parts[1]) # NEW: Parse IMU Pitch
+                            imu_roll_deg  = float(parts[2]) # NEW: Parse IMU Roll   
+                            rpm1 = float(parts[3])  
+                            speed1 = float(parts[4]) 
+                            rpm2 = float(parts[5]) 
+                            speed2 = float(parts[6]) 
+                            
+                            # Update the latest encoder data
+                            # Use a lock to ensure thread safety when updating shared data
+                            with encoder_data_lock: # Acquire lock before modifying shared data
+                                latest_encoder_data = {
+                                    'rpm1': rpm1, 'speed1': speed1, 
+                                    'rpm2': rpm2, 'speed2': speed2, 
+                                    'yaw': imu_yaw_deg,   # NEW: Store Yaw
+                                    'pitch': imu_pitch_deg, # NEW: Store Pitch
+                                    'roll': imu_roll_deg  # NEW: Store Roll
+                                }
+                            # print(f"[Encoder Thread] Updated Data: {latest_encoder_data}") 
 
-                        # --- NEW: Update Odometry ---
-                        # Assuming rpm1 is left wheel RPM, rpm2 is right wheel RPM
-                        odometry.update(rpm1, rpm2, imu_yaw_deg )
-                        x, y, theta_deg = odometry.get_pose()
-                        # print(f"[Odometry] X: {x:.3f} m, Y: {y:.3f} m, Theta: {theta_deg:.1f}°") # Debug print for odometry
-                    except ValueError:
-                        print(f"[Encoder Thread] Parse error for encoder data: {line}")
+                            # --- NEW: Update Odometry ---
+                            # Assuming rpm1 is left wheel RPM, rpm2 is right wheel RPM
+                            odometry.update(rpm1, rpm2, imu_yaw_deg )
+                            # x, y, theta_deg = odometry.get_pose()
+                            
+    #                         return jsonify({
+    #                             'x': x, 'y': y, 'theta': theta_deg,
+    #                             'distance': absolute_distance # This value is sent to the frontend
+    # })
+                            # print(f"[Odometry] X: {x:.3f} m, Y: {y:.3f} m, Theta: {theta_deg:.1f}°") # Debug print for odometry
+                        except ValueError:
+                            print(f"[Encoder Thread] Parse error for encoder data: {line}")
+                    else:
+                        print(f"[Encoder Thread] Invalid line format: {line} - expected 7 parts, got {len(parts)}")
                 else:
-                    print(f"[Encoder Thread] Invalid line format: {line}")
-            else:
-                # No data to read or serial connection might be down
-                if not ser_comm_obj.ser or not ser_comm_obj.ser.is_open:
-                    print("[Encoder Thread] Serial not open, pausing read attempts.")
-                    time.sleep(5) # Pause longer if serial is completely disconnected
-                else:
-                    time.sleep(0.05) # Small delay to prevent busy-looping if no data available yet
-        except Exception as e:
-            print(f"[Encoder Thread] Unexpected error processing encoder data: {e}")
-            time.sleep(1) # Sleep on error to prevent rapid crashes
+                    # No data to read or serial connection might be down
+                    if not ser_comm_obj.ser or not ser_comm_obj.ser.is_open:
+                        print("[Encoder Thread] Serial not open, pausing read attempts.")
+                        time.sleep(5) # Pause longer if serial is completely disconnected
+                    else:
+                        time.sleep(0.05) # Small delay to prevent busy-looping if no data available yet
+            except Exception as e:
+                print(f"[Encoder Thread] Unexpected error processing encoder data: {e}")
+                time.sleep(1) # Sleep on error to prevent rapid crashes
 
-
+# --- Global variable for current motor speed, initialized to a default value ---
+# This will be used to control the speed of the motors from the web interface
 current_global_motor_speed = 50
 
 @app.route('/')
@@ -145,7 +168,11 @@ def get_encoder_data():
 def get_pose():
     with encoder_data_lock: # Use the same lock as encoder data for consistency
         x, y, theta_deg = odometry.get_pose()
-    return jsonify({'x': x, 'y': y, 'theta': theta_deg})
+        absolute_distance = math.sqrt(x**2 + y**2) # Calculates distance from (0,0)
+    return jsonify({'x': x, 
+                    'y': y, 
+                    'theta': theta_deg,
+                    'distance': absolute_distance })
     
 
 # ---  DELAY FOR CAMERA ---
