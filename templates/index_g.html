@@ -12,29 +12,10 @@
     
 
     <div class="row">
-        <div class="video_box" width="40vw"><img src="/mjpeg"></div>
+        <div class="video_box"><img src="/mjpeg" alt="Video feed"></div>
         <!-- <div class="video_box">Video 2</div> -->
     </div>
 
-    <!-- <div class="row">
-        <div class="camera_box">
-            <div>Camera arm servos control panel</div>
-            <div class="row">
-                <div class="servo_box">
-                    MG90D <br>
-                    <input id="angle" type="number">
-                </div>
-                <div class="servo_box">
-                    MG90R <br>
-                    <input id="lala" type="number">
-                </div>
-            </div>
-        </div>
-        <div class="camera_box">
-            <div>Secondary camera servos control panel</div>
-            <div>MG90R<br>angle</div>
-        </div>
-    </div> -->
 <div class="body_contents">
 
 
@@ -80,9 +61,21 @@
             <button id="speedDownButton">Speed Down (▼)</button>
         </div>
         <div class="fb_box" data-command="stop">STOP MOTORS</div>
-        <button class="pic" onclick="takePhoto()" id="takePhotoButton" style="font-size: 3vh;">Pose for a pic!</button>
-    </div>
-</div>
+        <button style="margin: 2vh; font-size: 3vh;" onclick="onAutomation()">Automation</button>
+            <div class="automation" style="padding-left: 3vw;">
+                <div class="row hidden" id="distanceRow">  
+                    <label for="distanceInput" style="font-size: 2.2vh;">Distance (m):</label>
+                    <input type="number" id="distanceInput">
+                    <button id="setDistanceButton">Set Distance</button>
+                </div>
+                <div class="row hidden" id="directionRow" style="padding-top: 2vh;">  
+                    <label for="directionInput" style="font-size: 2.2vh;">Direction (°):</label>
+                    <input type="number" id="directionInput">
+                    <button id="setDirectionButton">Set Direction</button>
+                </div>
+            </div>
+            <button class="pic" onclick="takePhoto()" id="takePhotoButton" style="font-size: 3vh;">Pose for a pic!</button>
+        </div>
     <script src="{{ url_for('static', filename='script_g.js') }}"></script>
 </body>
 

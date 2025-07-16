@@ -1,14 +1,16 @@
 body {
-  margin: 3vh;
-  gap: 1vh;
+  margin: 0;
+  padding: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  /* background-image: url("photo_2025-06-12_19-22-38.jpg"); */
+  background-image: url("photo_2025-06-12_19-22-38.jpg");
   background-size: cover;
   background-repeat: no-repeat;
   background-position: top;
   background-color: #2d2d2d;
-  color: snow;
+  /* color: snow; */
+  color: #2d2d2d;
   
 }
 .body_contents{
@@ -47,6 +49,13 @@ body {
 }
 #tiltCenterButton:hover {
     background-color: #218838;
+}
+.hidden {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  height: 0;
+  overflow: hidden;
 }
 
 

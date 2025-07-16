@@ -180,7 +180,16 @@ function fetchPoseData() {
             
         });
 }
-
+function takePhoto() {
+    fetch('/take_photo', {method: 'POST'})
+        .then(response => response.json())
+        .then(data => {
+            console.log('Taking photo...', data)
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+}
 
 // --- Get DOM elements ---
 const pwmSpeedInput = document.getElementById('pwmSpeedInput');
@@ -197,13 +206,13 @@ const tiltDownButton = document.getElementById('tiltDownButton');
 const tiltCenterButton = document.getElementById('tiltCenterButton');
 
 // Automation Control elements
-const distanceRow = document.getElementById('distanceRow'); 
-const distanceInput = document.getElementById('distanceInput');
-const setDistanceButton = document.getElementById('setDistanceButton');
-const directionRow = document.getElementById('directionRow'); 
-const directionInput = document.getElementById('directionInput');
-const setDirectionButton = document.getElementById('setDirectionButton');
-const takePhotoButton = document.getElementById('takePhotoButton');
+// const distanceRow = document.getElementById('distanceRow'); 
+// const distanceInput = document.getElementById('distanceInput');
+// const setDistanceButton = document.getElementById('setDistanceButton');
+// const directionRow = document.getElementById('directionRow'); 
+// const directionInput = document.getElementById('directionInput');
+// const setDirectionButton = document.getElementById('setDirectionButton');
+// const takePhotoButton = document.getElementById('takePhotoButton');
 
 // --- Initialize input values ---
 if (pwmSpeedInput) {
@@ -380,33 +389,53 @@ document.addEventListener('keyup', function(event) {
 // Event listener for "Set Distance" button
 if (setDistanceButton) {
     setDistanceButton.addEventListener('click', () => {
-        const distance = parseFloat(distanceInput.value);
-        if (!isNaN(distance) && distance >= 0) { 
-            console.log("Sending distance for automation:", distance);
-            sendDistance(distance); 
+        const newDistance = parseInt(distanceInput.value);
+        if (!isNaN(newDistance) && newDistance >= 0) {
+            currentDistance = newDistance;
+            console.log("Distance set to:", currentDistance);
+            sendDistance(currentDistance);
         } else {
-            alert('Please enter a valid positive distance.');
-            distanceInput.value = '';
+            alert('Please enter a valid distance.');
+            distanceInput.value = currentDistance;
         }
     });
 }
 
-// Event listener for "Set Direction" button
 if (setDirectionButton) {
     setDirectionButton.addEventListener('click', () => {
-        const direction = parseInt(directionInput.value);
-        if (!isNaN(direction) && direction >= 0 && direction <= 360) { 
-            console.log("Sending direction for automation:", direction);
-            sendDirection(direction); 
+        const newDirection = parseInt(directionInput.value);
+        if (!isNaN(newDirection) && newDirection >= 0) {
+            currentDirection = newDirection;
+            console.log("Direction set to:", currentDirection);
+            sendDirection(currentDirection);
         } else {
-            alert('Please enter a valid direction between 0 and 360 degrees.');
-            directionInput.value = '';
+            alert('Please enter a valid direction.');
+            directionInput.value = currentDirection;
         }
     });
 }
 
 // Function triggered by onclick="onAutomation()" in HTML
 function onAutomation() {
+
+    const distanceRow = document.getElementById('distanceRow');
+    const directionRow = document.getElementById('directionRow');
+    const pwmControlGroup = document.getElementById('pwmControlGroup');
+    const tiltControlGroup = document.getElementById('tiltControlGroup');
+    const speedControlGroup = document.getElementById('speedControlGroup');
+    const motorControlGroup = document.getElementById('motorControlGroup');
+    const takePhotoButton = document.getElementById('takePhotoButton');
+    const label = document.getElementById('label');
+
+    distanceRow.classList.toggle('hidden');
+    directionRow.classList.toggle('hidden');
+    pwmControlGroup.classList.toggle('hidden');
+    tiltControlGroup.classList.toggle('hidden');
+    speedControlGroup.classList.toggle('hidden');
+    motorControlGroup.classList.toggle('hidden');
+    takePhotoButton.classList.toggle('hidden');
+    label.classList.toggle('hidden');
+
     automationModeActive = !automationModeActive; 
     console.log("Automation Mode Toggled:", automationModeActive);
 
