@@ -10,14 +10,13 @@
 
 <body>
     <div class="body_contents">
-
         <div class="row">
-            <div class="video_box"><img src="/mjpeg" alt="Video feed"/></div>
-        </div>
-
-        <div class="control_section"> 
+            <div class="video_box">
+            <img src="/mjpeg" alt="Video feed"/>
+            </div>
+            <div class="control_section">
             <div class="label" id="label">Motor Speed Control (PWM)</div>
-            <div class="speed_input_group" id="pwmControlGroup">
+            <div class="speed_adjust_group" id="pwmControlGroup">
                 <label for="pwmSpeedInput" style="font-size: 2.2vh;">Current Speed (%):</label>
                 <input type="number" id="pwmSpeedInput" value="50" min="0" max="100" step="5">
                 <button id="setSpeedButton">Set Speed</button>
@@ -26,35 +25,34 @@
                 <button id="speedUpButton">Speed Up (▲)</button>
                 <button id="speedDownButton">Speed Down (▼)</button>
             </div>
-            
             <div class="tilt_controls" id="tiltControlGroup">
                 <div class="label">Servo control</div>
                 <div style="display: flex; gap: 2vh; align-items: center;">
                     <button id="tiltUpButton" class="arrow_button">▲</button>
-                    <span style="font-size: 1.5em; font-weight: bold;">Angle: <span id="tiltAngleDisplay">90</span>°</span>
+                    <span style="font-size: 2.2vh;">Angle: <span id="tiltAngleDisplay">90</span>°</span>
                     <button id="tiltDownButton" class="arrow_button">▼</button>
                 </div>
                 <button id="tiltCenterButton">Center (90°)</button>
             </div>
-
             <div class="fb_centering" id="motorControlGroup">
                 <div class="fb_box" data-command="forward">↑</div>
-                <div class="control_row">
-                    <div class="control_box" data-command="left">←</div>
-                    <div class="control_box" data-command="right">→</div>
-                </div>
+            <div class="control_row">
+                <div class="control_box" data-command="left">←</div>
+                <div class="control_box" data-command="right">→</div>
+            </div>
                 <div class="fb_box" data-command="backward">↓</div>
             </div>
-
-            <button style="margin: 2vh; font-size: 3vh; background-color: #ffc107;" onclick="onAutomation()">Automation</button>
+            <button style="margin: 2vh; font-size: 3vh;" onclick="onAutomation()">Automation</button>
             <div class="automation" style="padding-left: 3vw;">
-                <div class="row" id="distanceRow">  
+                <div class="row hidden" id="distanceRow">  
                     <label for="distanceInput" style="font-size: 2.2vh;">Distance (m):</label>
-                    <input type="number" id="distanceInput" value="1.0" min="0" step="0.1">
+                    <input type="number" id="distanceInput">
+                    <button id="setDistanceButton">Set Distance</button>
                 </div>
-                <div class="row" id="directionRow" style="padding-top: 2vh;">  
+                <div class="row hidden" id="directionRow" style="padding-top: 2vh;">  
                     <label for="directionInput" style="font-size: 2.2vh;">Direction (°):</label>
-                    <input type="number" id="directionInput" value="0" min="0" max="360" step="5">
+                    <input type="number" id="directionInput">
+                    <button id="setDirectionButton">Set Direction</button>
                 </div>
             </div>
             <div class="stop" data-command="stop" style="margin: 2vh; font-size: 3vh;">STOP MOTORS</div>

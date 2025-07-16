@@ -58,6 +58,17 @@ encoder_data_lock = threading.Lock() # Protects access to latest_encoder_data
 
 odometry = SkidSteerOdometry(track_width_m) # Uses track_width_m
 
+
+
+# --- NEW: Automation Global Variables and Thread Event ---
+automation_active = threading.Event() # Event to signal the automation thread to run
+automation_target_distance = 0.0 # meters
+automation_target_direction = 0.0 # degrees
+automation_speed = 30 # Default speed for automation (in %)
+automation_state = "IDLE" # For internal tracking/display: IDLE, TURNING, DRIVING, FINISHED, STOPPED
+
+
+
 # --- REQUIRED: Thread function to continuously read encoder data from Arduino ---
 def read_encoder_data_thread(ser_comm_obj):
     global latest_encoder_data # Declare intent to modify global variable
@@ -303,6 +314,31 @@ def send_angle():
     # --- NEW: Call set_camera_tilt_angle from CameraServoController object ---
     camera_servo_controller.set_angle(angle) 
     return jsonify({'status': 'success', 'angle': angle})
+
+# --- NEW: Endpoints for Automation Targets ---
+@app.route('/send_distance', methods=['POST'])
+def send_distance():
+    global automation_target_distance # Access global target variable
+    data = request.get_json()
+    distance = float(data.get('distance')) # Ensure it's a float
+    automation_target_distance = distance
+    print(f"Received automation target distance: {automation_target_distance}m")
+    return jsonify({'status': 'success', 'distance': automation_target_distance})
+
+@app.route('/send_direction', methods=['POST'])
+def send_direction():
+    global automation_target_direction # Access global target variable
+    data = request.get_json()
+    direction = float(data.get('direction')) # Ensure it's a float
+    automation_target_direction = direction
+    print(f"Received automation target direction: {automation_target_direction}°")
+    return jsonify({'status': 'success', 'direction': automation_target_direction})
+
+
+    
+    # Set the event to signal the automation thread to start
+    automation_active.set()
+    automation_state = "IDLE"
 
 if __name__ == '__main__':
     print("Starting Flask application...")
