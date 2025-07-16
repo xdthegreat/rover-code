@@ -1,14 +1,16 @@
-// script_g.js 
+// script.js (ALL JAVASCRIPT FOR index.html GOES HERE)
 
-// --- Global Variable ---
+// --- Global Variables ---
 let currentPwmSpeed = 50; 
-
 let currentTiltAngle = 90; 
-const TILT_STEP_ANGLE = 5;
+const TILT_STEP_ANGLE = 5; 
 
-let automationModeActive = false; 
+let automationModeActive = false; // Flag to track if automation is currently running
+let currentDistanceInput = 1.0; // NEW: Default 1 meter
+let currentDirectionInput = 0; // NEW: Default 0 degrees
 
-// --- Core Function: sendCommand ---
+
+// --- Core Communication Functions ---
 function sendCommand(command) {
     fetch('/send_command', {
         method: 'POST',
@@ -26,9 +28,8 @@ function sendCommand(command) {
     });
 }
 
-// --- Core Function: sendAngle ---
 function sendAngle(angle) {
-    fetch('/send_angle', {
+    fetch('/send_angle', { 
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -38,15 +39,17 @@ function sendAngle(angle) {
     .then(response => response.json())
     .then(data => {
         console.log('Angle response:', data);
+        if (data.status === 'error') {
+            alert('Failed to set angle: ' + data.message);
+        }
     })
     .catch(error => {
         console.error('Error sending angle:', error);
     });
 }
 
-// --- Function: sendGlobalSpeed to Backend ---
 function sendGlobalSpeed(speed) {
-    fetch('/set_global_speed', { // This endpoint needs to be created in app.py
+    fetch('/set_global_speed', { 
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -65,10 +68,9 @@ function sendGlobalSpeed(speed) {
     });
 }
 
-
 // --- Automation Command Functions ---
 function sendDistance(distance) {
-    fetch('/send_distance', { // New endpoint needed in app.py
+    fetch('/send_distance', { 
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -77,18 +79,18 @@ function sendDistance(distance) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Distance response:', data);
+        console.log('Distance target response:', data);
         if (data.status === 'error') {
             alert('Failed to set distance: ' + data.message);
         }
     })
     .catch(error => {
-        console.error('Error sending distance:', error);
+        console.error('Error sending distance target:', error);
     });
 }
 
 function sendDirection(direction) {
-    fetch('/send_direction', { // New endpoint needed in app.py
+    fetch('/send_direction', { 
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -97,19 +99,19 @@ function sendDirection(direction) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Direction response:', data);
+        console.log('Direction target response:', data);
         if (data.status === 'error') {
             alert('Failed to set direction: ' + data.message);
         }
     })
     .catch(error => {
-        console.error('Error sending direction:', error);
+        console.error('Error sending direction target:', error);
     });
 }
 
 function takePhoto() { 
     console.log("Taking photo...");
-    fetch('/take_photo', { // New endpoint needed in app.py
+    fetch('/take_photo', { 
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -131,92 +133,90 @@ function takePhoto() {
 }
 
 
-
-
+// --- Function to fetch and display encoder data ---
 function fetchEncoderData() {
-    fetch('/get_encoder_data') // Call the new Flask endpoint
+    fetch('/get_encoder_data') 
         .then(response => response.json())
         .then(data => {
-            // Update the HTML elements with the received data
             document.getElementById('rpm1').textContent = data.rpm1.toFixed(2);
             document.getElementById('speed1').textContent = data.speed1.toFixed(2);
             document.getElementById('rpm2').textContent = data.rpm2.toFixed(2);
             document.getElementById('speed2').textContent = data.speed2.toFixed(2);
-            // console.log('Encoder data received:', data); // Uncomment for debugging
-            // Update IMU data
-
-            document.getElementById('imuPitch').textContent = data.pitch.toFixed(2);
-            document.getElementById('imuRoll').textContent = data.roll.toFixed(2);
+            document.getElementById('imuPitch').textContent = data.pitch.toFixed(2); 
+            document.getElementById('imuRoll').textContent = data.roll.toFixed(2); 
         })
-        .catch(error => {
+        .catch(error => { 
             console.error('Error fetching encoder data:', error);
-            // Optionally, display "N/A" or an error message on the dashboard
             document.getElementById('rpm1').textContent = 'N/A';
             document.getElementById('speed1').textContent = 'N/A';
             document.getElementById('rpm2').textContent = 'N/A';
             document.getElementById('speed2').textContent = 'N/A';
-            
-            document.getElementById('imuPitch').textContent = 'N/A';
-            document.getElementById('imuRoll').textContent = 'N/A';
+            document.getElementById('imuPitch').textContent = 'N/A'; 
+            document.getElementById('imuRoll').textContent = 'N/A'; 
         });
-} 
+}
 
-// --- NEW: Function to fetch and display odometry pose data ---
+// --- Function to fetch and display odometry pose data ---
 function fetchPoseData() {
-    fetch('/get_pose') // Call the new Flask endpoint
+    fetch('/get_pose') 
         .then(response => response.json())
         .then(data => {
             document.getElementById('poseX').textContent = data.x.toFixed(3);
             document.getElementById('poseY').textContent = data.y.toFixed(3);
             document.getElementById('poseTheta').textContent = data.theta.toFixed(1);
-            document.getElementById('absDistance').textContent = data.distance.toFixed(3);
-            // console.log('Pose data received:', data); // Uncomment for debugging
+            document.getElementById('absDistance').textContent = data.distance.toFixed(3); 
         })
         .catch(error => {
             console.error('Error fetching pose data:', error);
             document.getElementById('poseX').textContent = 'N/A';
             document.getElementById('poseY').textContent = 'N/A';
             document.getElementById('poseTheta').textContent = 'N/A';
-            
-        });
-}
-function takePhoto() {
-    fetch('/take_photo', {method: 'POST'})
-        .then(response => response.json())
-        .then(data => {
-            console.log('Taking photo...', data)
-        })
-        .catch(error => {
-            console.error('Error:', error);
+            document.getElementById('absDistance').textContent = 'N/A'; 
         });
 }
 
-// --- Get DOM elements ---
+
+// --- Get DOM elements (All elements including new automation controls) ---
 const pwmSpeedInput = document.getElementById('pwmSpeedInput');
 const setSpeedButton = document.getElementById('setSpeedButton');
 const speedUpButton = document.getElementById('speedUpButton');
-const speedDownButton = document.getElementById('speedDownButton'); // Corrected variable name
-const angleInput = document.getElementById('angle');
-const lalaInput = document.getElementById('lala'); 
+const speedDownButton = document.getElementById('speedDownButton'); 
 
-// NEW: Camera Tilt Control elements
 const tiltAngleDisplay = document.getElementById('tiltAngleDisplay');
 const tiltUpButton = document.getElementById('tiltUpButton');
 const tiltDownButton = document.getElementById('tiltDownButton');
 const tiltCenterButton = document.getElementById('tiltCenterButton');
 
-// Automation Control elements
-// const distanceRow = document.getElementById('distanceRow'); 
-// const distanceInput = document.getElementById('distanceInput');
-// const setDistanceButton = document.getElementById('setDistanceButton');
-// const directionRow = document.getElementById('directionRow'); 
-// const directionInput = document.getElementById('directionInput');
-// const setDirectionButton = document.getElementById('setDirectionButton');
-// const takePhotoButton = document.getElementById('takePhotoButton');
+// Mission Control Input elements
+const missionDistanceInput = document.getElementById('missionDistanceInput'); 
+const missionDirectionInput = document.getElementById('missionDirectionInput');
+// No longer need explicit start/stopMissionButton consts here as onclick is on the Automation button itself.
+// const startMissionButton = document.getElementById('startMissionButton');
+// const stopMissionButton = document.getElementById('stopMissionButton'); 
+
+
+// Existing HTML control groups (for hiding/showing)
+const pwmControlGroup = document.getElementById('pwmControlGroup');
+const tiltControlGroup = document.getElementById('tiltControlGroup');
+const speedControlGroup = document.getElementById('speedControlGroup'); 
+const motorControlGroup = document.getElementById('motorControlGroup');
+const takePhotoButton = document.getElementById('takePhotoButton');
+const label = document.getElementById('label'); 
+
 
 // --- Initialize input values ---
 if (pwmSpeedInput) {
     pwmSpeedInput.value = currentPwmSpeed; 
+}
+if (tiltAngleDisplay) {
+    tiltAngleDisplay.textContent = currentTiltAngle;
+    sendAngle(currentTiltAngle); // Send default angle to hardware on load
+}
+if (missionDistanceInput) { // Initialize mission input values
+    missionDistanceInput.value = currentDistanceInput;
+}
+if (missionDirectionInput) { // Initialize mission input values
+    missionDirectionInput.value = currentDirectionInput;
 }
 
 
@@ -246,8 +246,8 @@ if (speedUpButton) {
     });
 }
 
-if (speedDownButton) { // This is the corrected variable name
-    speedDownButton.addEventListener('click', () => { // Corrected event listener target
+if (speedDownButton) { 
+    speedDownButton.addEventListener('click', () => { 
         currentPwmSpeed = Math.max(0, currentPwmSpeed - 5); 
         if (pwmSpeedInput) {
             pwmSpeedInput.value = currentPwmSpeed;
@@ -256,42 +256,43 @@ if (speedDownButton) { // This is the corrected variable name
         sendGlobalSpeed(currentPwmSpeed);
     });
 }
-// --- NEW: Event Listeners for Camera Tilt Control ---
+
+// --- Event Listeners for Camera Tilt Control ---
 if (tiltUpButton) {
     tiltUpButton.addEventListener('click', () => {
-        currentTiltAngle = Math.min(180, currentTiltAngle + TILT_STEP_ANGLE); // Max 180 deg
+        currentTiltAngle = Math.min(180, currentTiltAngle + TILT_STEP_ANGLE); 
         if (tiltAngleDisplay) {
             tiltAngleDisplay.textContent = currentTiltAngle;
         }
         console.log("Camera tilt increased to:", currentTiltAngle);
-        sendAngle(currentTiltAngle); // Send new tilt angle
+        sendAngle(currentTiltAngle); 
     });
 }
 
 if (tiltDownButton) {
     tiltDownButton.addEventListener('click', () => {
-        currentTiltAngle = Math.max(0, currentTiltAngle - TILT_STEP_ANGLE); // Min 0 deg
+        currentTiltAngle = Math.max(0, currentTiltAngle - TILT_STEP_ANGLE); 
         if (tiltAngleDisplay) {
             tiltAngleDisplay.textContent = currentTiltAngle;
         }
         console.log("Camera tilt decreased to:", currentTiltAngle);
-        sendAngle(currentTiltAngle); // Send new tilt angle
+        sendAngle(currentTiltAngle); 
     });
 }
 
 if (tiltCenterButton) {
     tiltCenterButton.addEventListener('click', () => {
-        currentTiltAngle = 90; // Set to center (90 degrees)
+        currentTiltAngle = 90; 
         if (tiltAngleDisplay) {
             tiltAngleDisplay.textContent = currentTiltAngle;
         }
         console.log("Camera tilt centered at:", currentTiltAngle);
-        sendAngle(currentTiltAngle); // Send center angle
+        sendAngle(currentTiltAngle); 
     });
 }
 
 
-// --- Event Listeners for Movement Buttons (Mouse & Keyboard) ---
+// --- Event Listeners for Rover Movement Control Buttons (Mouse & Keyboard) ---
 
 // Map for keyboard commands
 const keyToCommand = {
@@ -316,23 +317,27 @@ document.querySelectorAll('.fb_box[data-command], .control_box[data-command]').f
     const command = button.getAttribute('data-command');
 
     button.addEventListener('mousedown', () => {
-        button.classList.add('active');
-        if (command !== 'stop') { 
-            sendCommand(command); 
+        if (!automationModeActive) { // Check active state inside listener
+            button.classList.add('active');
+            if (command !== 'stop') { 
+                sendCommand(command); 
+            }
+        } else {
+            console.log("Manual mouse command ignored: Automation is active.");
         }
     });
-// hhh
+
     const stopHandler = () => {
-        button.classList.remove('active');
-        sendCommand('stop'); 
-        
-        // --- NEW: Update UI speed to 0 when STOP is sent ---
-        currentPwmSpeed = 0;
-        if (pwmSpeedInput) {
-            pwmSpeedInput.value = currentPwmSpeed;
+        if (!automationModeActive) { // Check active state inside listener
+            button.classList.remove('active');
+            sendCommand('stop'); 
+            
+            currentPwmSpeed = 0;
+            if (pwmSpeedInput) {
+                pwmSpeedInput.value = currentPwmSpeed;
+            }
         }
     };
-
     button.addEventListener('mouseup', stopHandler);
     button.addEventListener('mouseleave', stopHandler); 
 });
@@ -363,21 +368,33 @@ function deactivateButtonVisual(command) {
 // Keyboard event listeners (keydown for movement, keyup for stop)
 document.addEventListener('keydown', function(event) {
     const key = event.key.toLowerCase();
-    if (keyToCommand.hasOwnProperty(key) && !event.repeat) { 
+    if (!automationModeActive && keyToCommand.hasOwnProperty(key) && !event.repeat) { 
         const command = keyToCommand[key];
         activateButtonVisual(command); 
         sendCommand(command); 
+    }
+    // NEW: Keyboard controls for camera tilt (still allow when automation is active)
+    if (event.key === 'q' && tiltUpButton) { 
+        event.preventDefault(); 
+        tiltUpButton.click(); 
+    }
+    if (event.key === 'e' && tiltDownButton) { 
+        event.preventDefault(); 
+        tiltDownButton.click(); 
+    }
+    if (event.key === 'c' && tiltCenterButton) { 
+        event.preventDefault(); 
+        tiltCenterButton.click(); 
     }
 });
 
 document.addEventListener('keyup', function(event) {
     const key = event.key.toLowerCase();
-    if (keyToCommand.hasOwnProperty(key)) {
+    if (!automationModeActive && keyToCommand.hasOwnProperty(key)) { 
         const command = keyToCommand[key];
         deactivateButtonVisual(command); 
         sendCommand('stop'); 
 
-        // --- NEW: Update UI speed to 0 when keyboard STOP is sent ---
         currentPwmSpeed = 0;
         if (pwmSpeedInput) {
             pwmSpeedInput.value = currentPwmSpeed;
@@ -386,71 +403,68 @@ document.addEventListener('keyup', function(event) {
 });
 
 
-// Event listener for "Set Distance" button
-if (setDistanceButton) {
-    setDistanceButton.addEventListener('click', () => {
-        const newDistance = parseInt(distanceInput.value);
-        if (!isNaN(newDistance) && newDistance >= 0) {
-            currentDistance = newDistance;
-            console.log("Distance set to:", currentDistance);
-            sendDistance(currentDistance);
-        } else {
-            alert('Please enter a valid distance.');
-            distanceInput.value = currentDistance;
-        }
-    });
-}
+// --- Automation Control (Logic consolidated here for single button) ---
 
-if (setDirectionButton) {
-    setDirectionButton.addEventListener('click', () => {
-        const newDirection = parseInt(directionInput.value);
-        if (!isNaN(newDirection) && newDirection >= 0) {
-            currentDirection = newDirection;
-            console.log("Direction set to:", currentDirection);
-            sendDirection(currentDirection);
-        } else {
-            alert('Please enter a valid direction.');
-            directionInput.value = currentDirection;
-        }
-    });
-}
-
-// Function triggered by onclick="onAutomation()" in HTML
+// This function is triggered by onclick="onAutomation()" from HTML
+// It handles both starting and stopping automation based on automationModeActive flag
 function onAutomation() {
+    // --- NEW: Retrieve values from specific mission input fields ---
+    const distance = parseFloat(document.getElementById('distanceInput').value);
+    const direction = parseInt(document.getElementById('directionInput').value);
 
-    const distanceRow = document.getElementById('distanceRow');
-    const directionRow = document.getElementById('directionRow');
-    const pwmControlGroup = document.getElementById('pwmControlGroup');
-    const tiltControlGroup = document.getElementById('tiltControlGroup');
-    const speedControlGroup = document.getElementById('speedControlGroup');
-    const motorControlGroup = document.getElementById('motorControlGroup');
-    const takePhotoButton = document.getElementById('takePhotoButton');
-    const label = document.getElementById('label');
+    // Validate inputs
+    if (isNaN(distance) || distance < 0) {
+        alert('Please enter a valid non-negative distance for the mission.');
+        return;
+    }
+    if (isNaN(direction) || direction < 0 || direction > 360) {
+        alert('Please enter a valid direction between 0 and 360 degrees.');
+        return;
+    }
 
-    distanceRow.classList.toggle('hidden');
-    directionRow.classList.toggle('hidden');
-    pwmControlGroup.classList.toggle('hidden');
-    tiltControlGroup.classList.toggle('hidden');
-    speedControlGroup.classList.toggle('hidden');
-    motorControlGroup.classList.toggle('hidden');
-    takePhotoButton.classList.toggle('hidden');
-    label.classList.toggle('hidden');
+    // Update global JS variables with current mission targets
+    currentMissionDistance = distance;
+    currentMissionDirection = direction;
 
+    // Toggle automation mode
     automationModeActive = !automationModeActive; 
     console.log("Automation Mode Toggled:", automationModeActive);
 
-    if (distanceRow) distanceRow.classList.toggle('hidden', !automationModeActive);
-    if (directionRow) directionRow.classList.toggle('hidden', !automationModeActive);
+    if (automationModeActive) { // If activating automation
+        console.log(`Starting mission with Distance: ${currentMissionDistance}m, Direction: ${currentMissionDirection}°`);
+        sendDistance(currentMissionDistance);   // Send targets to backend
+        sendDirection(currentMissionDirection); // Send targets to backend
+        sendCommand('start_automation');        // Tell backend to start automation
+        alert("Automation Mode ACTIVATED. Mission started!");
 
-    sendCommand(automationModeActive ? 'start_automation' : 'stop_automation');
+        // Hide manual controls
+        if (pwmControlGroup) pwmControlGroup.classList.add('hidden');
+        if (tiltControlGroup) tiltControlGroup.classList.add('hidden');
+        if (speedControlGroup) speedControlGroup.classList.add('hidden');
+        if (motorControlGroup) motorControlGroup.classList.add('hidden');
+        if (takePhotoButton) takePhotoButton.classList.add('hidden');
+        if (label) label.classList.add('hidden'); 
 
-    alert(automationModeActive ? "Automation Mode ACTIVATED" : "Automation Mode DEACTIVATED");
+    } else { // If deactivating automation
+        sendCommand('stop_automation'); // Tell backend to stop automation
+        alert("Automation Mode DEACTIVATED. Mission stopped!");
+
+        // Show manual controls again
+        if (pwmControlGroup) pwmControlGroup.classList.remove('hidden');
+        if (tiltControlGroup) tiltControlGroup.classList.remove('hidden');
+        if (speedControlGroup) speedControlGroup.classList.remove('hidden');
+        if (motorControlGroup) motorControlGroup.classList.remove('hidden');
+        if (takePhotoButton) takePhotoButton.classList.remove('hidden');
+        if (label) label.classList.remove('hidden'); 
+    }
 }
 
-window.onAutomation = onAutomation;
+// Attach onAutomation to the window object so it can be called from HTML onclick
+window.onAutomation = onAutomation; 
 
 
-// NEW: Event listener for "Pose for a pic!" button
+// Event listener for "Pose for a pic!" button (existing)
+// const takePhotoButton = document.getElementById('takePhotoButton'); // Redeclared here for the purpose of a proper working code
 if (takePhotoButton) {
     takePhotoButton.addEventListener('click', () => {
         takePhoto(); 
@@ -459,26 +473,5 @@ if (takePhotoButton) {
 
 // --- Start fetching encoder data periodically ---
 setInterval(fetchEncoderData, 200); 
-// --- NEW: Start fetching pose data periodically ---
+// --- Start fetching pose data periodically ---
 setInterval(fetchPoseData, 200);
-
-
-// --- Angle Input Listeners ---
-if (angleInput) {
-    angleInput.addEventListener('change', () => {
-        const angle = parseInt(angleInput.value);
-        if (!isNaN(angle)) {
-            sendAngle(angle);
-        }
-    });
-}
-
-if (lalaInput) {
-    lalaInput.addEventListener('change', () => {
-        const angle = parseInt(lalaInput.value);
-        if (!isNaN(angle)) {
-            sendAngle(angle); 
-        }
-    });
-}
-setInterval(fetchEncoderData, 200); 
