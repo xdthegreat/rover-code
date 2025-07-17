@@ -62,13 +62,26 @@ odometry = SkidSteerOdometry(track_width_m) # Uses track_width_m
 
 
 # --- NEW: Automation Global Variables and Thread Event ---
-automation_active = threading.Event() # Event to signal the automation thread to run
-automation_target_distance = 0.0 # meters
-automation_target_direction = 0.0 # degrees
-automation_speed = 30 # Default speed for automation (in %)
-automation_state = "IDLE" # For internal tracking/display: IDLE, TURNING, DRIVING, FINISHED, STOPPED
+# automation_active = threading.Event() # Event to signal the automation thread to run
+# automation_target_distance = 0.0 # meters
+# automation_target_direction = 0.0 # degrees
+# automation_speed = 30 # Default speed for automation (in %)
+# automation_state = "IDLE" # For internal tracking/display: IDLE, TURNING, DRIVING, FINISHED, STOPPED
 
-
+# -- Instantiate the AutomationController ---
+# This object will manage the automation logic and state.
+automation_controller = AutomationController(
+        app_instance=app,
+        odometry_obj=odometry,
+        encoder_lock=encoder_data_lock,
+        hardware_motor_funcs={ # Pass specific motor functions as a dict
+            'forward': forward,
+            'backward': backward,
+            'turn_left': turn_left,
+            'turn_right': turn_right,
+            'stop': stop
+        }
+    )
 
 # --- REQUIRED: Thread function to continuously read encoder data from Arduino ---
 def read_encoder_data_thread(ser_comm_obj):
@@ -144,30 +157,33 @@ def index():
 
 @app.route('/send_command', methods=['POST'])
 def send_command():
-    global automation_active, automation_state
+    # global automation_active, automation_state
 
     data = request.get_json()
     command = data.get('command')
     print(f"Received command: {command}", flush=True)
     # --- NEW: Check if automation is active ---
-    if automation_controller.automation_active.is_set():
+    if automation_controller.is_active():
 
         if command not in ['stop', 'start_automation', 'stop_automation']: # Allow stop or toggle
             print(f"[App] Ignoring manual command '{command}' while automation is active.")
             return jsonify({'status': 'ignored', 'message': 'Automation active'})
 
     if command == 'start_automation': # <--- This handles the start command
+        # automation_active.set() 
         automation_controller.start_mission() # Call method on controller object
 
         print("[App] Automation sequence started via dashboard.")
-        automation_state = "STARTED"
+        # automation_state = "STARTED"
     elif command == 'stop_automation':
+        # automation_active.clear()
+        # stop() 
         automation_controller.stop_mission() # Clears the threading.Event
-        # stop() # Stop motors immediately (from hardware.py)
+        stop() # Stop motors immediately (from hardware.py)
         print("[App] Automation sequence stopped via dashboard.")
-        automation_state = "STOPPED"
+        # automation_state = "STOPPED"
     else: 
-        if not automation_controller.automation_active.is_set(): # Only process manual commands if automation is not active
+        if not automation_controller.is_active():  # Only process manual commands if automation is not active
             if command == 'forward':
                 forward(current_global_motor_speed) # <--- The global speed is passed here!
             elif command == 'backward':
@@ -341,20 +357,22 @@ def send_angle():
 # --- NEW: Endpoints for Automation Targets ---
 @app.route('/send_distance', methods=['POST'])
 def send_distance():
-    global automation_target_distance # Access global target variable
+    # global automation_target_distance # Access global target variable
     data = request.get_json()
     distance = float(data.get('distance')) # Ensure it's a float
     automation_controller.set_mission_targets(distance, automation_controller.automation_target_direction)
     print(f"Received automation target distance: {automation_controller.automation_target_distance}m")
+
     return jsonify({'status': 'success', 'distance': automation_controller.automation_target_distance})
 
 @app.route('/send_direction', methods=['POST'])
 def send_direction():
-    global automation_target_direction # Access global target variable
+    # global automation_target_direction # Access global target variable
     data = request.get_json()
     direction = float(data.get('direction')) # Ensure it's a float
     automation_controller.set_mission_targets(automation_controller.automation_target_distance, direction)
     print(f"Received automation target direction: {automation_controller.automation_target_direction}°")
+
     return jsonify({'status': 'success', 'direction': automation_controller.automation_target_direction})
 
 
@@ -387,20 +405,11 @@ if __name__ == '__main__':
 
     print("PCA9685 motor control ready via hardware.py.") 
 
-# -- Instantiate the AutomationController ---
-# This object will manage the automation logic and state.
-    automation_controller = AutomationController(
-        app_instance=app,
-        odometry_obj=odometry,
-        encoder_lock=encoder_data_lock,
-        hardware_motor_funcs={ # Pass specific motor functions as a dict
-            'forward': forward,
-            'backward': backward,
-            'turn_left': turn_left,
-            'turn_right': turn_right,
-            'stop': stop
-        }
-    )
+
+    # This thread manages the mission.
+    automation_thread = threading.Thread(target=automation_controller.run_automation_thread, daemon=True) # CHANGED: Call run_automation_thread method
+    automation_thread.start()
+    print("Automation control thread started.")
     
     if arduino_comm.ser is None: # Check if serial connection failed at startup
         print("CRITICAL ERROR: Arduino serial communication not established for encoder data.")

@@ -51,7 +51,8 @@ class AutomationController:
             print("[AutomationController] Mission stopped.")
         else:
             print("[AutomationController] Mission already inactive. Ignoring stop command.")
-
+    def is_active(self): # For app.py to check automation status
+        return self.automation_active.is_set()
 
     def run_automation_thread(self):
         """
@@ -73,8 +74,8 @@ class AutomationController:
                     with self.encoder_data_lock: # Safely access shared odometry data
                         initial_x, initial_y, initial_theta_deg = self.odometry.get_pose()
 
-                    print(f"[AutomationController Thread] Mission Start Pose: X:{initial_x:.3f}, Y:{initial_y:.3f}, Theta:{initial_theta_deg:.1f}°") # NEW PRINT
-                    
+                    print(f"[AutomationController Thread] Mission Start Pose: X:{initial_x:.3f}, Y:{initial_y:.3f}, Theta:{initial_theta_deg:.1f}°") 
+
                     
  # --- Step 1: Turn to Target Direction ---
                     self.automation_state = "TURNING"
