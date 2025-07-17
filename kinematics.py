@@ -14,7 +14,7 @@ track_width_m = TRACK_WIDTH_MM / 1000.0 # Convert to meters
 
 
 class SkidSteerOdometry:
-    def __init__(self, track_width_m, alpha=0.02):
+    def __init__(self, track_width_m, alpha=0.5):
         self.x = 0.0      # meters
         self.y = 0.0      # meters
         self.theta = 0.0  # radians

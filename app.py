@@ -27,6 +27,7 @@ import adafruit_pca9685 # <--- REQUIRED: For PCA9685 servo control
 import busio # <--- REQUIRED: For I2C communication used by PCA9685
 from servo_cam import CameraServoController # <--- REQUIRED: For camera servo control
 from kinematics import SkidSteerOdometry, track_width_m # <--- REQUIRED: For odometry calculations
+from automation_controller import AutomationController
 
 app = Flask(__name__)   
 
@@ -84,6 +85,7 @@ def read_encoder_data_thread(ser_comm_obj):
                     parts = line.split(",")
                     if len(parts) == 7:
                         try:
+                            print(f"[Encoder Thread] Raw Line: {line}")
                             # Parse float values 
                             # Assuming the format is: "imu_yaw_deg,rpm1,speed1,rpm2,speed2"
                             # Example: "45.0,100,50,120,60"
@@ -105,18 +107,18 @@ def read_encoder_data_thread(ser_comm_obj):
                                     'pitch': imu_pitch_deg, # NEW: Store Pitch
                                     'roll': imu_roll_deg  # NEW: Store Roll
                                 }
-                            # print(f"[Encoder Thread] Updated Data: {latest_encoder_data}") 
+                            print(f"[Encoder Thread] Updated Data: {latest_encoder_data}") 
 
                             # --- NEW: Update Odometry ---
                             # Assuming rpm1 is left wheel RPM, rpm2 is right wheel RPM
                             odometry.update(rpm1, rpm2, imu_yaw_deg )
-                            # x, y, theta_deg = odometry.get_pose()
+                            x, y, theta_deg = odometry.get_pose()
                             
     #                         return jsonify({
     #                             'x': x, 'y': y, 'theta': theta_deg,
     #                             'distance': absolute_distance # This value is sent to the frontend
     # })
-                            # print(f"[Odometry] X: {x:.3f} m, Y: {y:.3f} m, Theta: {theta_deg:.1f}°") # Debug print for odometry
+                            print(f"[Odometry] X: {x:.3f} m, Y: {y:.3f} m, Theta: {theta_deg:.1f}°") # Debug print for odometry
                         except ValueError:
                             print(f"[Encoder Thread] Parse error for encoder data: {line}")
                     else:
@@ -142,21 +144,42 @@ def index():
 
 @app.route('/send_command', methods=['POST'])
 def send_command():
+    global automation_active, automation_state
+
     data = request.get_json()
     command = data.get('command')
     print(f"Received command: {command}", flush=True)
-    if command == 'forward':
-        forward(current_global_motor_speed) # <--- The global speed is passed here!
-    elif command == 'backward':
-        backward(current_global_motor_speed) # <--- The global speed is passed here!
-    elif command == 'left':
-        turn_left(current_global_motor_speed) # <--- The global speed is passed here!
-    elif command == 'right':
-        turn_right(current_global_motor_speed) # <--- The global speed is passed here!
-    elif command == 'stop':
-        stop() # Stop doesn't need a speed, as it sets PWM to 0
-    else:
-        print(f"Unknown command received: {command}")
+    # --- NEW: Check if automation is active ---
+    if automation_controller.automation_active.is_set():
+
+        if command not in ['stop', 'start_automation', 'stop_automation']: # Allow stop or toggle
+            print(f"[App] Ignoring manual command '{command}' while automation is active.")
+            return jsonify({'status': 'ignored', 'message': 'Automation active'})
+
+    if command == 'start_automation': # <--- This handles the start command
+        automation_controller.start_mission() # Call method on controller object
+
+        print("[App] Automation sequence started via dashboard.")
+        automation_state = "STARTED"
+    elif command == 'stop_automation':
+        automation_controller.stop_mission() # Clears the threading.Event
+        # stop() # Stop motors immediately (from hardware.py)
+        print("[App] Automation sequence stopped via dashboard.")
+        automation_state = "STOPPED"
+    else: 
+        if not automation_controller.automation_active.is_set(): # Only process manual commands if automation is not active
+            if command == 'forward':
+                forward(current_global_motor_speed) # <--- The global speed is passed here!
+            elif command == 'backward':
+                backward(current_global_motor_speed) # <--- The global speed is passed here!
+            elif command == 'left':
+                turn_left(current_global_motor_speed) # <--- The global speed is passed here!
+            elif command == 'right':
+                turn_right(current_global_motor_speed) # <--- The global speed is passed here!
+            elif command == 'stop':
+                stop() # Stop doesn't need a speed, as it sets PWM to 0
+            else:
+                print(f"Unknown command received: {command}")
         
     return jsonify({'status': 'success', 'command': command})
 
@@ -321,24 +344,21 @@ def send_distance():
     global automation_target_distance # Access global target variable
     data = request.get_json()
     distance = float(data.get('distance')) # Ensure it's a float
-    automation_target_distance = distance
-    print(f"Received automation target distance: {automation_target_distance}m")
-    return jsonify({'status': 'success', 'distance': automation_target_distance})
+    automation_controller.set_mission_targets(distance, automation_controller.automation_target_direction)
+    print(f"Received automation target distance: {automation_controller.automation_target_distance}m")
+    return jsonify({'status': 'success', 'distance': automation_controller.automation_target_distance})
 
 @app.route('/send_direction', methods=['POST'])
 def send_direction():
     global automation_target_direction # Access global target variable
     data = request.get_json()
     direction = float(data.get('direction')) # Ensure it's a float
-    automation_target_direction = direction
-    print(f"Received automation target direction: {automation_target_direction}°")
-    return jsonify({'status': 'success', 'direction': automation_target_direction})
+    automation_controller.set_mission_targets(automation_controller.automation_target_distance, direction)
+    print(f"Received automation target direction: {automation_controller.automation_target_direction}°")
+    return jsonify({'status': 'success', 'direction': automation_controller.automation_target_direction})
 
 
     
-    # Set the event to signal the automation thread to start
-    automation_active.set()
-    automation_state = "IDLE"
 
 if __name__ == '__main__':
     print("Starting Flask application...")
@@ -366,6 +386,21 @@ if __name__ == '__main__':
 
 
     print("PCA9685 motor control ready via hardware.py.") 
+
+# -- Instantiate the AutomationController ---
+# This object will manage the automation logic and state.
+    automation_controller = AutomationController(
+        app_instance=app,
+        odometry_obj=odometry,
+        encoder_lock=encoder_data_lock,
+        hardware_motor_funcs={ # Pass specific motor functions as a dict
+            'forward': forward,
+            'backward': backward,
+            'turn_left': turn_left,
+            'turn_right': turn_right,
+            'stop': stop
+        }
+    )
     
     if arduino_comm.ser is None: # Check if serial connection failed at startup
         print("CRITICAL ERROR: Arduino serial communication not established for encoder data.")

@@ -8,7 +8,7 @@ body {
 body {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 95vh;
   background-image: url("photo_2025-06-12_19-22-38.jpg");
   background-size: cover;
   background-repeat: no-repeat;
@@ -38,7 +38,7 @@ body {
 
 .video_box {
   flex: 1;
-  height: 60vh;
+  height: 80vh;
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -212,4 +212,9 @@ body {
   flex-direction: column;
   align-items: center;
   padding-top: 2vh;
+}
+#run_automation{
+  background-color: #296807;
+  font-weight: 700;
+  font-size: 16px;
 }

@@ -201,6 +201,10 @@ const tiltControlGroup = document.getElementById('tiltControlGroup');
 const speedControlGroup = document.getElementById('speedControlGroup'); 
 const motorControlGroup = document.getElementById('motorControlGroup');
 const takePhotoButton = document.getElementById('takePhotoButton');
+const distanceRow = document.getElementById('distanceRow');
+const directionRow = document.getElementById('directionRow');
+const run_automation = document.getElementById('run_automation'); // NEW: Automation button
+
 const label = document.getElementById('label'); 
 
 
@@ -443,6 +447,10 @@ function onAutomation() {
         if (speedControlGroup) speedControlGroup.classList.add('hidden');
         if (motorControlGroup) motorControlGroup.classList.add('hidden');
         if (takePhotoButton) takePhotoButton.classList.add('hidden');
+
+        if (distanceRow) distanceRow.classList.remove('hidden');
+        if (directionRow) directionRow.classList.remove('hidden');
+        if (run_automation) run_automation.classList.remove('hidden'); // Hide automation button
         if (label) label.classList.add('hidden'); 
 
     } else { // If deactivating automation
@@ -455,6 +463,11 @@ function onAutomation() {
         if (speedControlGroup) speedControlGroup.classList.remove('hidden');
         if (motorControlGroup) motorControlGroup.classList.remove('hidden');
         if (takePhotoButton) takePhotoButton.classList.remove('hidden');
+
+        if (distanceRow) distanceRow.classList.add('hidden');
+        if (directionRow) directionRow.classList.add('hidden');
+        if (run_automation) run_automation.classList.add('hidden'); // Show automation button
+        
         if (label) label.classList.remove('hidden'); 
     }
 }
