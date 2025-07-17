@@ -10,11 +10,23 @@
 
 <body>
     <div class="body_contents">
-        <div class="row">
-            <div class="video_box">
-            <img src="/mjpeg" alt="Video feed"/>
+        <div class="sensor_and_cam">
+            <div class="sensor_feedback">
+                <div class="label">Sensor Feedback</div>
+                <div class="text">ENC1: RPM: <span id="rpm1">0.00</span> | Speed: <span id="speed1">0.00</span> cm/s</div>
+                <div class="text">ENC2: RPM: <span id="rpm2">0.00</span> | Speed: <span id="speed2">0.00</span> cm/s</div>
+                <div class="text">Pose: X: <span id="poseX">0.000</span> m, Y: <span id="poseY">0.000</span> m, &theta;: <span id="poseTheta">0.0</span>°</div>
+                <div class="text">Distance: <span id="absDistance">0.000</span> m</div>
+                <div class="text">IMU: Pitch: <span id="imuPitch">0.00</span>° | Roll: <span id="imuRoll">0.00</span>°</div>
             </div>
-            <div class="control_section">
+
+            <!-- <div class="row"> -->
+            <div class="video_box">
+                <img src="/mjpeg" alt="Video feed"/>
+            </div>
+        </div>
+
+        <div class="control_section">
             <div class="label" id="label">Motor Speed Control (PWM)</div>
             <div class="speed_adjust_group" id="pwmControlGroup">
                 <label for="pwmSpeedInput" style="font-size: 2.2vh;">Current Speed (%):</label>
@@ -66,16 +78,10 @@
             <div class="stop" data-command="stop" style="margin: 2vh; font-size: 3vh;">STOP MOTORS</div>
             <button class="pic" onclick="takePhoto()" id="takePhotoButton" style="font-size: 3vh;">Pose for a pic!</button>
         </div>
-    </div>
 
-    <div class="sensor_feedback">
-        <div class="label">Sensor Feedback</div>
-        <div class="text">ENC1: RPM: <span id="rpm1">0.00</span> | Speed: <span id="speed1">0.00</span> cm/s</div>
-        <div class="text">ENC2: RPM: <span id="rpm2">0.00</span> | Speed: <span id="speed2">0.00</span> cm/s</div>
-        <div class="text">Pose: X: <span id="poseX">0.000</span> m, Y: <span id="poseY">0.000</span> m, &theta;: <span id="poseTheta">0.0</span>°</div>
-        <div class="text">Distance: <span id="absDistance">0.000</span> m</div>
-        <div class="text">IMU: Pitch: <span id="imuPitch">0.00</span>° | Roll: <span id="imuRoll">0.00</span>°</div>
     </div>
+    
+    
 
     <script src="{{ url_for('static', filename='script_g.js') }}"></script>
 </body>

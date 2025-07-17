@@ -3,12 +3,14 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
+  box-sizing: border-box;
+  /* border: #1512c1 solid 0.3vh; */
 }
 
 body {
   display: flex;
   flex-direction: column;
-  /* height: 95vh; */
+  height: 95vh;
   background-image: url("photo_2025-06-12_19-22-38.jpg");
   background-size: cover;
   background-repeat: no-repeat;
@@ -19,10 +21,23 @@ body {
 
 .body_contents {
   display: flex;
-  flex-direction: column;
-  flex: 1;
+  flex-direction: row;
+  justify-content: space-around;
+  /* align-items: center; */
+  /* flex: 1; */
+  
+  /* border: #df1e0d solid 0.3vh; */
   min-height: 0;
   margin: 3vh 3vw;
+}
+.sensor_and_cam{
+  display: flex;
+  flex-direction: column;
+  /* align-items:center; */
+  justify-content: center;
+  /* border: #296807 solid 0.3vh; */
+  /* justify-content: center; */
+  width: 70vw;
 }
 
 .body_contents > div {
@@ -30,27 +45,27 @@ body {
 }
 
 .row {
-  display: flex;
-  justify-content: space-between;
+  /* display: flex;
+  justify-content: space-between; */
   gap: 4vw;
   height: fit-content;
 }
 
 .video_box {
-  flex: 1;
+  /* flex: 1; */
   height: 80vh;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  margin: 0;
+  margin: 20px;
   overflow: hidden;
 }
 
 .video_box img {
-  width: 100%;
-  height: auto;
-  max-height: 100%;
-  object-fit: contain;
+  width: 120%; 
+  height: auto; 
+  max-height: 100%; 
+  object-fit: contain; 
   border-radius: 1vh;
 }
 
@@ -59,6 +74,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  /* border: cyan solid 0.3vh; */
 }
 
 .control_section h2 {
@@ -168,6 +184,7 @@ body {
   background-color: #2d2d2d;
   font-weight: 900;
   width: 30vw
+
 }
 
 .stop {
