@@ -28,7 +28,7 @@ import busio # <--- REQUIRED: For I2C communication used by PCA9685
 from servo_cam import CameraServoController # <--- REQUIRED: For camera servo control
 from kinematics import SkidSteerOdometry, track_width_m # <--- REQUIRED: For odometry calculations
 from automation_controller import AutomationController
-
+from camera_scan_controller import CameraScanController
 app = Flask(__name__)   
 
 # --- NEW: Code to suppress specific log messages ---
@@ -68,20 +68,8 @@ odometry = SkidSteerOdometry(track_width_m) # Uses track_width_m
 # automation_speed = 30 # Default speed for automation (in %)
 # automation_state = "IDLE" # For internal tracking/display: IDLE, TURNING, DRIVING, FINISHED, STOPPED
 
-# -- Instantiate the AutomationController ---
-# This object will manage the automation logic and state.
-automation_controller = AutomationController(
-        app_instance=app,
-        odometry_obj=odometry,
-        encoder_lock=encoder_data_lock,
-        hardware_motor_funcs={ # Pass specific motor functions as a dict
-            'forward': forward,
-            'backward': backward,
-            'turn_left': turn_left,
-            'turn_right': turn_right,
-            'stop': stop
-        }
-    )
+
+
 
 # --- REQUIRED: Thread function to continuously read encoder data from Arduino ---
 def read_encoder_data_thread(ser_comm_obj):
@@ -288,6 +276,27 @@ def get_pose():
                     'theta': theta_deg,
                     'distance': absolute_distance })
     
+@app.route('/scan_camera', methods=['POST'])
+def scan_camera():
+    # global scan_active # Access the global event
+    if camera_scan_controller.start_scan():
+        print("[App] Camera scan is already active. Ignoring start command.")
+        return jsonify({'status': 'ignored', 'message': 'Scan already active'}), 400
+
+    camera_scan_controller.start_scan() # Set the event to start the camera scan thread
+    print("[App] Camera scan activated.")
+    return jsonify({'status': 'success', 'message': 'Camera scan started'})
+
+@app.route('/stop_camera_scan', methods=['POST'])
+def stop_camera_scan():
+    if not camera_scan_controller.stop_scan():
+        print("[App] Camera scan is already inactive. Ignoring stop command.")
+        return jsonify({'status': 'ignored', 'message': 'Scan already inactive'}), 400
+
+    camera_scan_controller.stop_scan() # Clear the event to stop the camera scan thread
+    # The thread's finally block or exception will return servo to 90 degrees
+    print("[App] Camera scan stopped.")
+    return jsonify({'status': 'success', 'message': 'Camera scan stopped'})
 
 # ---  DELAY FOR CAMERA ---
 # print("Delaying for camera warm-up...")
@@ -376,6 +385,7 @@ def send_direction():
     return jsonify({'status': 'success', 'direction': automation_controller.automation_target_direction})
 
 
+
     
 
 if __name__ == '__main__':
@@ -404,12 +414,34 @@ if __name__ == '__main__':
 
 
     print("PCA9685 motor control ready via hardware.py.") 
+    # -- Instantiate the AutomationController ---
+    # This object will manage the automation logic and state.
+    automation_controller = AutomationController(
+            app_instance=app,
+            odometry_obj=odometry,
+            encoder_lock=encoder_data_lock,
+            hardware_motor_funcs={ # Pass specific motor functions as a dict
+                'forward': forward,
+                'backward': backward,
+                'turn_left': turn_left,
+                'turn_right': turn_right,
+                'stop': stop
+            }
+        )
+    camera_scan_controller = CameraScanController(
+        app_instance=app,
+        camera_servo_controller_obj=camera_servo_controller # Pass the already initialized servo controller
+)
 
 
     # This thread manages the mission.
     automation_thread = threading.Thread(target=automation_controller.run_automation_thread, daemon=True) # CHANGED: Call run_automation_thread method
     automation_thread.start()
     print("Automation control thread started.")
+        # --- NEW: Start Camera Scan Control Thread ---
+    scan_control_thread = threading.Thread(target=camera_scan_controller, daemon=True)
+    scan_control_thread.start()
+    print("Camera scan control thread started.")
     
     if arduino_comm.ser is None: # Check if serial connection failed at startup
         print("CRITICAL ERROR: Arduino serial communication not established for encoder data.")

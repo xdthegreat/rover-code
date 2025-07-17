@@ -8,7 +8,7 @@ body {
 body {
   display: flex;
   flex-direction: column;
-  height: 95vh;
+  /* height: 95vh; */
   background-image: url("photo_2025-06-12_19-22-38.jpg");
   background-size: cover;
   background-repeat: no-repeat;

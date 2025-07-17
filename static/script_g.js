@@ -9,6 +9,7 @@ let automationModeActive = false; // Flag to track if automation is currently ru
 let currentDistanceInput = 1.0; // NEW: Default 1 meter
 let currentDirectionInput = 0; // NEW: Default 0 degrees
 
+let scanModeActive = false;
 
 // --- Core Communication Functions ---
 function sendCommand(command) {
@@ -304,6 +305,10 @@ const keyToCommand = {
     'a': 'left',
     's': 'backward',
     'd': 'right', 
+    'arrowup': 'forward',    // NEW: Up arrow
+    'arrowdown': 'backward', // NEW: Down arrow
+    'arrowleft': 'left',     // NEW: Left arrow
+    'arrowright': 'right',   // NEW: Right arrow
 };
 
 // Map for finding buttons by command for visual feedback
@@ -470,6 +475,73 @@ function onAutomation() {
         
         if (label) label.classList.remove('hidden'); 
     }
+}
+
+// --- NEW: Camera Scan Control ---
+function startCameraScan() {
+    console.log("Starting camera scan...");
+    fetch('/scan_camera', { // New endpoint needed in app.py
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({}) // No data needed for simple start scan command
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Scan start response:', data);
+        if (data.status === 'error') {
+            alert('Failed to start scan: ' + data.message);
+        } else {
+            scanModeActive = true; // Set flag
+            alert('Camera Scan Started!');
+            if (scanCameraButton) scanCameraButton.classList.add('hidden'); // Hide scan button
+            if (stopScanButton) stopScanButton.classList.remove('hidden'); // Show stop scan button
+            // Optionally disable other manual controls while scanning (e.g., motor controls)
+        }
+    })
+    .catch(error => {
+        console.error('Error starting scan:', error);
+        alert('Error starting scan: ' + error.message);
+    });
+}
+
+function stopCameraScan() {
+    console.log("Stopping camera scan...");
+    fetch('/stop_camera_scan', { // New endpoint needed in app.py
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({}) // No data needed for simple stop scan command
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Scan stop response:', data);
+        if (data.status === 'error') {
+            alert('Failed to stop scan: ' + data.message);
+        } else {
+            scanModeActive = false; // Clear flag
+            alert('Camera Scan Stopped!');
+            if (scanCameraButton) scanCameraButton.classList.remove('hidden'); // Show scan button
+            if (stopScanButton) stopScanButton.classList.add('hidden'); // Hide stop scan button
+            // Optionally re-enable other manual controls
+        }
+    })
+    .catch(error => {
+        console.error('Error stopping scan:', error);
+        alert('Error stopping scan: ' + error.message);
+    });
+}
+
+// Event listener for "Scan Camera" button
+if (scanCameraButton) {
+    scanCameraButton.addEventListener('click', startCameraScan);
+}
+
+// Event listener for "STOP Scan" button
+if (stopScanButton) {
+    stopScanButton.addEventListener('click', stopCameraScan);
 }
 
 // Attach onAutomation to the window object so it can be called from HTML onclick
